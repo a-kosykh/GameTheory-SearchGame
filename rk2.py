@@ -76,6 +76,23 @@ class ParaboloidCap:
             #self.x.append(math.sqrt(random.uniform(0,1)*self.r)*math.cos(randomAngle))
             #self.y.append(math.sqrt(random.uniform(0,1)*self.r)*math.sin(randomAngle))
 
+class FullParaboloid:
+  def __init__(self, X_par, Y_par, Z_par, X_cap, Y_cap, Z_cap, e):
+    self.e = e
+    self.X = X_par
+    self.Y = Y_par
+    self.Z = Z_par
+    for (i, j, k) in zip(X_cap, Y_cap, Z_cap):
+      np.append(self.X, i)
+      np.append(self.Y, j)
+      np.append(self.Z, k)
+  def checkDistance(self, checkPoint):
+        for i in range(0, len(self.Z)):
+            savedPoint = ParaboloidPoint(0,0)
+            savedPoint.setXYZ(self.X[i], self.Y[i], self.Z[i])
+            if checkPoint.distance(savedPoint) <= self.e:
+                return True
+        return False
 
 def getRandomParaboloidPoint(height):
     randomU = random.uniform(0, 1) * math.sqrt(height)
@@ -94,12 +111,14 @@ def drawSphere(xCenter, yCenter, zCenter, r):
     z = r*z + zCenter
     return (x,y,z)
 
-dots = 600
-neighborhood = 0.01
-h = 3
-iterates = 10
+dots = 200
+neighborhood = 0.5
+h = 1
+iterates = 10000
+
 p1 = Paraboloid(dots, neighborhood, h)
-c1 = ParaboloidCap(h, 200)
+c1 = ParaboloidCap(h, int(dots / 3))
+fp1 = FullParaboloid(p1.x, p1.y, p1.z, c1.x, c1.y, c1.z, neighborhood)
 
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
@@ -107,11 +126,11 @@ ax = fig.add_subplot(111, projection='3d')
 random_points = []
 wins = 0
 for i in range(0, iterates):
-    if i % 10000 == 0:
+    if i % 1000 == 0:
         print("Done:", i, "Wins:", wins)
     randParaboloidPoint = getRandomParaboloidPoint(h)
     random_points.append(randParaboloidPoint)
-    if p1.checkDistance(randParaboloidPoint):
+    if fp1.checkDistance(randParaboloidPoint):
         wins += 1
         
 print("Game Value:", (wins/iterates))
