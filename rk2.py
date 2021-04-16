@@ -4,7 +4,7 @@ from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 import random
 
-goldenRatio = (1 + 5**0.5) / 2
+goldenAngle = (3 - math.sqrt(5)) * math.pi
 
 # Точка параболоида
 class ParaboloidPoint:
@@ -35,18 +35,13 @@ class Paraboloid:
         
         # равномерное распределение точек на боковой поверхности параболоида
         I = np.arange(0, dots, dtype=float) + random.uniform(0, 1)
-        U = np.arccos(2 * I**2 / dots**2)
-        U /= math.pi/2
+        U = np.sqrt(I) / math.sqrt(dots)
         U *= float(math.sqrt(self.h))
-        V = 2 * math.pi * goldenRatio * I
+        V = goldenAngle * I
         
         self.X = U*np.cos(V)
         self.Y = U*np.sin(V)
         self.Z = (U*U)
-        # удаление невалидных элементов
-        self.Z = self.Z[~np.isnan(self.Z)]
-        self.Y = self.Y[~np.isnan(self.Y)]
-        self.X = self.X[~np.isnan(self.X)]
     
     # функция расчёта расстояние до точки на параболоиде
     def checkDistance(self, checkPoint):
@@ -68,10 +63,10 @@ class ParaboloidCap:
 
         # генерация равномерного распределения точек на основании параболоида
         I = np.arange(0, dots, dtype=float) + random.uniform(0, 1)
-        U = 2 * math.pi * goldenRatio * I
+        V = goldenAngle * I
         R = np.sqrt(I) / math.sqrt(dots) * self.r
-        self.X = R * np.cos(U)
-        self.Y = R * np.sin(U)
+        self.X = R * np.cos(V)
+        self.Y = R * np.sin(V)
         self.Z = np.repeat(self.h, dots)
 
 # Параболоид с основанием
@@ -107,6 +102,7 @@ def drawSphere(xCenter, yCenter, zCenter, r):
     z = r*z + zCenter
     return (x,y,z)
 
+# расчёт отношения площади к основания параболоида к общей площади всей фигуры
 def getAreaRatio(height):
     r = math.sqrt(height)
     S_cap = math.pi*r*r
@@ -136,14 +132,15 @@ def getRandomParaboloidPoint(height):
 
 
 # Параметры игры
-s = 200
-e = 0.01
-h = 1
-iterNum = 10
+h = 5
+s = 100
+s_cap = int(getAreaRatio(h)*s)
+e = 0.3
+iterNum = 100000
 
 # Инициализация фигур
-p1 = Paraboloid(s, e, h)
-c1 = ParaboloidCap(h, int(getAreaRatio(h)*s))
+p1 = Paraboloid(s - s_cap, e, h)
+c1 = ParaboloidCap(h, s_cap)
 fp1 = FullParaboloid(p1.X, p1.Y, p1.Z, c1.X, c1.Y, c1.Z, e)
 
 # Инициализация графика
@@ -154,9 +151,11 @@ ax = fig.add_subplot(111, projection='3d')
 # расчёт расстояния до точек первого игрока
 random_points = []
 wins = 0
-for i in range(0, iterNum):
+for i in range(0, iterNum + 1):
     if i % 1000 == 0:
         print("Done:", i, "Wins:", wins)
+        if (i == iterNum):
+            break
     # Генерация случайной точки
     randParaboloidPoint = getRandomParaboloidPoint(h)
     random_points.append(randParaboloidPoint)
@@ -183,7 +182,7 @@ for (xi, yi, zi, ri) in zip(p1.X, p1.Y, p1.Z, np.full(len(p1.X), e)):
 # Отображение точек первого игрока на основании
 for (xi, yi, zi, ri) in zip(c1.X, c1.Y, c1.Z, np.full(len(c1.X), e)):
     (xs, ys, zs) = drawSphere(xi, yi, zi, ri)
-    #ax.plot_wireframe(xs, ys, zs, color="y")
+    ax.plot_wireframe(xs, ys, zs, color="r")
 
 # Отображение точек второго игрока на фигуре
 for i in random_points:
